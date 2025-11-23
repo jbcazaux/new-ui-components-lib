@@ -1,0 +1,37 @@
+ @use "../../scss/variables.scss" as *;
+
+.button {
+  display: inline-block;
+  cursor: pointer;
+  border: 0;
+  border-radius: 3em;
+  font-weight: 700;
+  line-height: 1;
+
+  &.primary {
+    background-color: $light-button-primary;
+    color: $light-button-inverse-text;
+  }
+  
+  &.secondary {
+    box-shadow: rgb(0 0 0 / 15%) 0 0 0 1px inset;
+    background-color: transparent;
+    color:  $light-button-text;
+  }
+
+  &.small {
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+
+  &.medium {
+    padding: 11px 20px;
+    font-size: 14px;
+  }
+
+  &.large {
+    padding: 12px 24px;
+    font-size: 16px;
+  }
+
+}
