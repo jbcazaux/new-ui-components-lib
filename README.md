@@ -383,13 +383,183 @@ You will be able to import a component just like this
 import { Text, Button } from 'my-component-lib/components'
 ```
 
-## Lint
+## Updating the libraries
 
-We will use some 2 linters to improve the quality of the code: eslint (ts) and stylelint (scss).
+Time for a pause. We should update the libraries to make sure we use the last versions. This repository is supposed to be updated regulary and if you just follow the tutorial it is supposed to be up to date, but in your professional project it is important to keep your libs up to date.
+
+We will use npm check updates. Just add this line in your scripts of the _package.json_ file.
+```json
+"ncui": "npx npm-check-updates -i",
+```
+
+I prefer to declare the exact version of the dependencies in the _package.json_ file. So I will remove all the **^** before the versions.
+
+## Prettify and Lint Code
+
+We will use some 2 linters to improve the quality of the code: eslint (ts) and stylelint (scss). To format the code it will be the well-known prettier which works well with eslint.
+
+### Prettier
+
+First install the prettier plugin on your IDE. Then you can run
+```console
+➜  npm i -D -E prettier
+```
+Here is the config file that I use (_.prettierrc_ at the root directory of the project).
+```json
+{
+  "arrowParens": "always",
+  "bracketSpacing": true,
+  "endOfLine":"auto",
+  "htmlWhitespaceSensitivity": "css",
+  "insertPragma": false,
+  "jsxBracketSameLine": false,
+  "singleQuote": true,
+  "jsxSingleQuote": false,
+  "printWidth": 80,
+  "proseWrap": "always",
+  "quoteProps": "as-needed",
+  "requirePragma": false,
+  "semi": false,
+  "tabWidth": 2,
+  "trailingComma": "all",
+  "useTabs": false
+}
+```
 
 ### eslint
 
+First install the eslint plugin on your IDE. Then you can run
+```console
+➜  npm i -D -E @eslint/js eslint eslint-import-resolver-typescript eslint-plugin-import eslint-plugin-react-hooks eslint-plugin-react-refresh eslint-plugin-prettier eslint-config-prettier @stylistic/eslint-plugin @eslint-react/eslint-plugin eslint-plugin-react-dom
+```
+Then you can overwrite the existing _eslint.config.js_ file that vite created with the project.
+```javascript
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import eslintReact from '@eslint-react/eslint-plugin'
+import reactDom from 'eslint-plugin-react-dom'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import tseslint from 'typescript-eslint'
+import { defineConfig, globalIgnores } from 'eslint/config'
+import importPlugin from 'eslint-plugin-import';
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
+import stylistic from '@stylistic/eslint-plugin'
+
+export default defineConfig([
+  globalIgnores(['dist', '*.config.*js']),
+  {
+    extends: [
+      js.configs.recommended,
+      eslintPluginPrettierRecommended,
+      reactHooks.configs.flat.recommended,
+      eslintReact.configs["recommended-typescript"],
+      reactDom.configs.recommended,
+      tseslint.configs.strictTypeChecked,
+      tseslint.configs.stylisticTypeChecked,
+      reactRefresh.configs.vite,
+      importPlugin.flatConfigs.recommended, 
+      importPlugin.flatConfigs.typescript,
+    ],
+    plugins: {
+      '@stylistic': stylistic
+    },
+    rules: {
+      '@stylistic/jsx-quotes': ["error", "prefer-double"],
+      'arrow-body-style': 'error',
+      eqeqeq: 'error',
+      'no-console': 'error',
+      'no-duplicate-imports': 'error',
+      'no-unused-vars': 'error',
+      'prefer-const': 'error',
+      'prefer-template': 'error',
+      "prettier/prettier": [
+        "error",
+        {
+          "endOfLine": "auto"
+        }
+      ],
+      quotes: ["error", "single", { "avoidEscape": true }],
+      'react-hooks/exhaustive-deps': 'error',
+      'react-hooks/unsupported-syntax': 'error',
+      'react-hooks/incompatible-library': 'error',
+      'import/order': [
+        'error',
+        {
+          alphabetize: {
+            order: 'asc',
+            caseInsensitive: true,
+          },
+          groups: ['builtin', "external", "internal", 'parent', 'sibling', 'index'],
+          'newlines-between': 'always',
+          pathGroups: [
+            {
+              pattern: '@/**',
+              group: 'internal',
+              position: 'after',
+            },
+          ],
+        },
+      ]
+    },
+    languageOptions: {
+      ecmaVersion: 'latest',
+      globals: globals.browser,
+      parserOptions: {
+        projectService: true,
+      },
+    },
+    settings: {
+      'import/resolver': {
+        typescript: {
+          project: 'tsconfig.json',
+        },
+      },
+    },
+  },
+  {
+    linterOptions: {
+      reportUnusedInlineConfigs: 'error',
+			reportUnusedDisableDirectives: "error",
+    },
+  }
+])
+```
+
 ### stylelint
+
+First install the stylint plugin on your IDE. Then you can run
+```console
+➜  npm i -D -E stylelint stylelint-config-standard stylelint-config-standard-scss 
+```
+Then you just have to create the _stylelint.config.js_ file at the root of the project.
+```javascript
+/** @type {import('stylelint').Config} */
+export default {
+  extends: ["stylelint-config-standard-scss"],
+  "overrides": [
+    {
+      "files": ["**/*.scss"],
+    }
+  ]
+}
+```
+Then you can add the script in your _package.json_ file.
+```json
+"slint": "npx stylelint \"**/*.scss\"",
+```
+
+### Run linters
+
+And finally you should be able to run 
+```console
+➜  npm run lint && npm run slint
+```
+A few errors may appear, especially in the imports that should be sorted (cf the configuration of the rule _import/order_).
+
+You can configure your IDE to automatically fix linting errors when you save the file.
+
+You should also configure a git hook to run linters on precommit. You can also add a task in your CI.
 
 # React + TypeScript + Vite
 
