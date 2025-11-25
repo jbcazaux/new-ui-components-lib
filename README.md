@@ -94,6 +94,8 @@ Do not forget to reflect the renaming of the file in your tsconfig.json
 }
 ```
 
+In the _package.json_ file, you can remove the "preview" script.
+
 ## Our first UI Components
 
 As an example for this library we will create two simple components. It will be a Button and a Text components. In real life you may want to base your components on an headless component lib like shadcn, radix-ui, react-aria, ...
@@ -196,7 +198,7 @@ import cn from 'classnames'
 
 import styles from './style.module.scss'
 
-export interface Props {
+interface Props {
   primary?: boolean
   size?: 'small' | 'medium' | 'large'
   label: string
@@ -561,76 +563,202 @@ You can configure your IDE to automatically fix linting errors when you save the
 
 You should also configure a git hook to run linters on precommit. You can also add a task in your CI.
 
-# React + TypeScript + Vite
+## Storybook
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+What would be a UI Component Library without a **storybook** to see and test the components ?
 
-Currently, two official plugins are available:
+### Install
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Run the storybook install command
+```console
+➜  npm create storybook@latest
+```
+During the install, 2 questions are asked :
 
-## React Compiler
-
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+You can skip the onboarding page
+```
+√ New to Storybook? » No: Skip onboarding & don't ask again
+```
+And you can install the Minimal configuration
+```
+√ What configuration should we install? » Minimal: Component dev only
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Once the install is over, storybook is run in your browser. You can just stop the server from your terminal. We will create our own stories.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Finish the configuration
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
+Some examples are created by default, you can just delete them, we will create our owns.
+```console
+➜ rm -Rf src/stories
+```
+We will install the a11y plugin which is helpfull for running some accessibility tests.
+```console
+➜ npx storybook add @storybook/addon-a11y
+```
+And the docs plugin
+```console
+➜ npx storybook add @storybook/addon-docs
+```
+
+vite-dts plugin must be configured to not generate the types definitions of the stories.ts files. You can update the configuration in the _vite.config.ts_ file
+
+```typescript
+  dts({
+  tsconfigPath: fileURLToPath(
+    new URL('tsconfig.lib.json', import.meta.url),
+  ),
+  exclude: '**/*.stories.ts',
+}),
+```
+We must add the _.storybook/_ directory to the ts config, by updating _tsconfig.lib.json_ as this
+```json
+ "include": ["src/**/*.ts", "src/**/*.tsx", ".storybook/**.ts"],
+ ```
+
+ A small utility lib for handling aliases
+ ```console
+ ➜ npm i -D -E vite-tsconfig-paths
+```
+
+Then we will configure storybook to use the new CSF (Component Story Format) feature. Plus, we will create the stories files just next to the components definition, not in the \_\_tests\_\_ directory. Replace the content of _.storybook/main.ts with
+```typescript
+import { withoutVitePlugins } from '@storybook/builder-vite'
+import { defineMain } from '@storybook/react-vite/node'
+import tsconfigPaths from 'vite-tsconfig-paths'
+
+export default defineMain({
+  framework: '@storybook/react-vite',
+  stories: [
+    {
+      directory: '../src/components',
+      files: '**/*.stories.*',
+    },
+  ],
+  addons: ['@storybook/addon-docs', '@storybook/addon-a11y'],
+  async viteFinal(config) {
+    return {
+      ...config,
+      plugins: [
+        ...(await withoutVitePlugins(config.plugins, [
+          'vite:dts',
+          'vite:lib-inject-css',
+        ])),
+        tsconfigPaths(),
+      ],
+    }
+  },
+})
+```
+
+The _.storybook/preview.ts_ should also be updated
+```typescript
+import addonA11y from '@storybook/addon-a11y'
+import addonDocs from '@storybook/addon-docs'
+import { definePreview } from '@storybook/react-vite'
+
+export default definePreview({
+  addons: [addonA11y(), addonDocs()],
+  tags: ['autodocs'],
+  parameters: {
+    a11y: {
+      options: { xpath: true },
     },
   },
-])
+})
 ```
+
+Add the @Storybook alias in the _tsconfig.lib.json_ so we can use it the stories.
+```typescript
+"compilerOptions": {
+  // ...
+  /* aliases */
+  "paths": {
+    "@/storybook/*": ["./.storybook/*"]
+  }
+  // ...
+}
+```
+
+You can get rid off the **^** in the versions of the lib we just installed in your _package.json_ file and everything should be ok to write our stories.
+
+### Stories
+
+#### Text.stories.ts
+
+Let's begin with the stories of the simple Text component _src/lib/components/Text/Text.stories.ts
+```typescript
+import preview from '@/storybook/preview'
+
+import { Text } from '.'
+
+const meta = preview.meta({
+  title: 'Text',
+  component: Text,
+  parameters: {
+    layout: 'centered',
+  },
+  tags: ['autodocs'],
+})
+
+export const Primary = meta.story({
+  args: {
+    text: 'hello world !',
+  },
+})
+```
+We should add documentation for the Props of the Text in _src/components/Text/index.tsx_.
+```typescript
+interface Props {
+  /** Text to display */
+  text: string
+}
+```
+
+#### Button.stories.ts
+
+And now the stories of the Button component _src/lib/components/Button/Button.stories.ts
+```typescript
+import preview from '@/storybook/preview'
+
+import { Text } from '.'
+
+const meta = preview.meta({
+  title: 'Text',
+  component: Text,
+  parameters: {
+    layout: 'centered',
+  },
+  tags: ['autodocs'],
+})
+
+export const Primary = meta.story({
+  args: {
+    text: 'hello world !',
+  },
+})
+```
+We should add documentation for the Props of the Button in _src/components/Button/index.tsx_.
+```typescript
+interface Props {
+  /** Is this the principal call to action on the page? */
+  primary?: boolean
+  /** How large should the button be? */
+  size?: 'small' | 'medium' | 'large'
+  /** Button contents */
+  label: string
+  /** Optional click handler */
+  onClick?: () => void
+}
+```
+
+### Run storybook
+
+A simple 
+```console
+➜ npm run storybook
+```
+
+Et voilà !
+
+FIXME : [vite:react-swc] We recommend switching to `@vitejs/plugin-react` for improved performance as no swc plugins are used. More information at https://vite.dev/rolldown

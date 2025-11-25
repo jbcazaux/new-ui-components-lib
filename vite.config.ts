@@ -17,6 +17,7 @@ export default defineConfig({
       tsconfigPath: fileURLToPath(
         new URL('tsconfig.lib.json', import.meta.url),
       ),
+      exclude: '**/*.stories.ts',
     }),
     preserveDirectives(),
   ],
@@ -44,7 +45,9 @@ export default defineConfig({
     rolldownOptions: {
       external: ['react', 'react-dom', 'react/jsx-runtime'],
       input: Object.fromEntries(
-        globSync('src/**/*.{ts,tsx}').map((file) => [
+        globSync('src/**/*.{ts,tsx}', {
+          ignore: ['src/**/*types*.ts', 'src/**/*stories*.ts'],
+        }).map((file) => [
           relative('src', file.slice(0, file.length - extname(file).length)),
           fileURLToPath(new URL(file, import.meta.url)),
         ]),

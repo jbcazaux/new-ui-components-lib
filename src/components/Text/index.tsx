@@ -1,6 +1,7 @@
 import styles from './style.module.scss'
 
 interface Props {
+  /** Text to display */
   text: string
 }
 
