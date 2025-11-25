@@ -30,5 +30,5 @@
       "@/storybook/*": ["./.storybook/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", ".storybook/**.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", ".storybook/**.ts", "__tests__/*.ts"],
 }

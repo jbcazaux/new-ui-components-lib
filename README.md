@@ -69,12 +69,12 @@ You can remove the content of the _src_ folder. It is just a sample App that we 
 ```console
 ➜  rm -Rf src/*
 ```
-You will create a _README.md_ if you want, just delete the file for now. The _index.html_ was used for the app, we can delete it safely.
+You will create a _README.md_ later if you want, just delete the file for now. The _index.html_ was used for the app, we can delete it safely.
 ```console
 ➜  rm README.md index.html
 ```
 
-No need to the _public_ directory either.
+No need of the _public_ directory either.
 ```console
 ➜  rm -Rf public
 ```
@@ -270,7 +270,7 @@ Then add the style.module.scss file.
 
 ### Text Component
 
-A dummy Text component, in a real world UI Component lib you may want to create a _Typography_ component. The content of the file should be written in  _src/lib/components/Text/index.tsx_.
+A dummy Text component, in a real world UI Component lib you may want to create a _Typography_ component. The content of the file should be written in  _src/components/Text/index.tsx_.
 
 ```typescript
 import styles from './style.module.scss'
@@ -375,14 +375,14 @@ Then you can create the package
 ➜  npm link
 ```
 
-To use in from another local project, just run from your nextJs (for example) project root.
+To use it from another local project, just run from your nextJs (for example) project root.
 ```console
 ➜  npm link new-ui-components-lib
 ```
 
 You will be able to import a component just like this
 ```typescript
-import { Text, Button } from 'my-component-lib/components'
+import { Text, Button } from 'new-ui-components-lib/components'
 ```
 
 ## Updating the libraries
@@ -686,7 +686,7 @@ You can get rid off the **^** in the versions of the lib we just installed in yo
 
 #### Text.stories.ts
 
-Let's begin with the stories of the simple Text component _src/lib/components/Text/Text.stories.ts
+Let's begin with the stories of the simple Text component _src/components/Text/Text.stories.ts
 ```typescript
 import preview from '@/storybook/preview'
 
@@ -717,7 +717,7 @@ interface Props {
 
 #### Button.stories.ts
 
-And now the stories of the Button component _src/lib/components/Button/Button.stories.ts
+And now the stories of the Button component _src/components/Button/Button.stories.ts
 ```typescript
 import preview from '@/storybook/preview'
 
@@ -760,5 +760,134 @@ A simple
 ```
 
 Et voilà !
+
+## Unit testing
+
+Time to add some unit tests !
+
+### Install
+
+```console
+➜ npm install -D -E vitest @testing-library/react jsdom @vitest/coverage-v8
+```
+
+To reuse the vite configuration you can just add a **test** entry in the file _vite.config.ts_
+```typescript
+test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './__tests__/setupVitest.ts',
+  },
+```
+You will have to add this line at the top of the file too
+```typescript
+/// <reference types="vitest/config" />
+```
+
+And juste like we have ignored stories and types files from the build of the library, we have to ignore test files.
+```typescript
+// ...
+input: Object.fromEntries(
+    globSync('src/**/*.{ts,tsx}', {
+      ignore: [
+        'src/**/*types*.ts',
+        'src/**/*stories*.ts',
+        'src/**/*test.{ts,tsx}',
+      ],
+// ...
+```
+
+As you can see, there is a \_\__tests\_\_/setupVitest.ts to create at the root of the project, it will handle the setup of all the vitest tests.
+```typescript
+import 'jsdom'
+```
+
+And finally add a script "test" in the scripts property of your _package.json_ file.
+
+```json
+"test": "vitest"
+```
+
+### Text.test.tsx
+
+This file will be created next to the _index.tsx_ and _Text.stories.ts_ files in the _src/components/Text/_ directory.
+
+```typescript
+import { render, screen } from '@testing-library/react'
+import { describe, test, expect } from 'vitest'
+
+import { Text } from '.'
+
+describe('Text Component', () => {
+  test('should display text', () => {
+    render(<Text text="hello world" />)
+
+    const txt = screen.getByText('hello world')
+
+    expect(txt).toBeTruthy()
+  })
+})
+```
+### Button.test.tsx
+
+Create the file next to the component as before.
+
+```typescript
+import { fireEvent, render, screen } from '@testing-library/react'
+import { describe, test, expect, vi } from 'vitest'
+
+import { Button } from '.'
+
+describe('Button Component', () => {
+  test('should display Button', () => {
+    render(<Button label="My Button" />)
+
+    const btn = screen.getByRole('button', { name: 'My Button' })
+
+    expect(btn).toBeTruthy()
+  })
+
+  test('should handle click', () => {
+    const handleClick = vi.fn()
+    render(<Button label="My Button" onClick={handleClick} />)
+
+    const btn = screen.getByRole('button')
+    fireEvent.click(btn)
+
+    expect(handleClick).toHaveBeenCalledTimes(1)
+  })
+})
+```
+
+### Run & Coverage
+
+Just run
+```console
+➜ npm test
+```
+To see the results of the tests.
+
+If you want to add coverage you can add a script entry in your _package.json_
+```json
+"coverage": "vitest run --coverage"
+```
+and update the test entry of your _vite.config.ts_ file
+```typescript
+// ...
+test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './__tests__/setupVitest.ts',
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*'],
+      exclude: ['src/components/main.ts', 'src/components/**/*.stories.ts'],
+      clean: true
+    },
+  },
+// ...  
+```
+
+Do not forget to add the _coverage/_ directory in your _.gitignore_.
 
 FIXME : [vite:react-swc] We recommend switching to `@vitejs/plugin-react` for improved performance as no swc plugins are used. More information at https://vite.dev/rolldown

@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { createHash } from 'node:crypto'
 import { extname, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -46,7 +47,11 @@ export default defineConfig({
       external: ['react', 'react-dom', 'react/jsx-runtime'],
       input: Object.fromEntries(
         globSync('src/**/*.{ts,tsx}', {
-          ignore: ['src/**/*types*.ts', 'src/**/*stories*.ts'],
+          ignore: [
+            'src/**/*types*.ts',
+            'src/**/*stories*.ts',
+            'src/**/*test.{ts,tsx}',
+          ],
         }).map((file) => [
           relative('src', file.slice(0, file.length - extname(file).length)),
           fileURLToPath(new URL(file, import.meta.url)),
@@ -56,6 +61,21 @@ export default defineConfig({
         assetFileNames: 'assets/[name][extname]',
         entryFileNames: '[name].js',
       },
+    },
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './__tests__/setupVitest.ts',
+    coverage: {
+      provider: 'v8',
+      //include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        '*.scss',
+        'src/components/main.ts',
+        'src/components/**/*.stories.ts',
+      ],
+      clean: true,
     },
   },
 })
