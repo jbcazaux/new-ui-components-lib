@@ -24,6 +24,13 @@ Using vite is the simpliest way to bootstrap the project. Some questions are ask
 - I chose the **Typescript + SWC** variant, using **Typescript + React Compiler** is harder to configure, especially when importing the lib in another project
 - **Rolldown** works well and is more futur proof
 
+Note: If you have problems with SWC, or don't use any SWC plugin, you can also switch to the Oxc transpiler. You just have to install **@vitejs/plugin-react** and import it instead of **@vitejs/plugin-react-swc** in the _vite.config.ts_ file. Sometimes you can see this warning
+```
+[vite:react-swc] We recommend switching to `@vitejs/plugin-react` for improved performance as no swc plugins are used. More information at https://vite.dev/rolldown
+```
+The **@vitejs/plugin-react** will use babel transpiler if you use babel plugin (like the react-compiler) and the Oxc transpiler otherwise (see [https://vite.dev/guide/rolldown#utilizing-oxc-s-react-refresh-transform](https://vite.dev/guide/rolldown#utilizing-oxc-s-react-refresh-transform)).
+
+
 ```console
 ➜  dev npm create vite@latest
 Need to install the following packages:
@@ -890,4 +897,3 @@ test: {
 
 Do not forget to add the _coverage/_ directory in your _.gitignore_.
 
-FIXME : [vite:react-swc] We recommend switching to `@vitejs/plugin-react` for improved performance as no swc plugins are used. More information at https://vite.dev/rolldown
